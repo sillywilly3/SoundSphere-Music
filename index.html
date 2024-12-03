@@ -3,263 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GreenWave - Free Music Streaming</title>
+  <title>FreeStream</title>
   <style>
-    :root {
-      --bg-color: #121212;
-      --highlight-color: #1db954;
-      --text-color: #ffffff;
-      --secondary-color: #1a1a1a;
-    }
-
-    body {
-      margin: 0;
-      font-family: 'Arial', sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .container {
-      width: 90%;
-      max-width: 1200px;
-      text-align: center;
-    }
-
-    header {
-      margin-bottom: 20px;
-    }
-
-    h1 {
-      color: var(--highlight-color);
-      font-size: 2.5em;
-    }
-
-    main {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .playlist {
-      background: var(--secondary-color);
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
-      transition: all 0.3s ease;
-    }
-
-    .playlist:hover {
-      transform: scale(1.02);
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    li {
-      padding: 10px 0;
-      cursor: pointer;
-      border-bottom: 1px solid #333;
-      font-size: 1.2em;
-    }
-
-    li:last-child {
-      border-bottom: none;
-    }
-
-    li:hover {
-      color: var(--highlight-color);
-      transition: color 0.2s ease;
-    }
-
-    li.active {
-      color: var(--highlight-color);
-      font-weight: bold;
-    }
-
-    .player {
-      background: var(--secondary-color);
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .controls button {
-      background: var(--highlight-color);
-      border: none;
-      padding: 10px 20px;
-      border-radius: 50%;
-      color: var(--text-color);
-      font-size: 1.5em;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .controls button:hover {
-      transform: scale(1.2);
-    }
-
-    .track-info {
-      font-size: 1.2em;
-    }
-
-    .progress-container {
-      width: 100%;
-      max-width: 400px;
-      background: #333;
-      border-radius: 10px;
-      overflow: hidden;
-      height: 10px;
-      margin-top: 10px;
-    }
-
-    .progress {
-      height: 100%;
-      width: 0;
-      background: var(--highlight-color);
-      transition: width 0.1s linear;
-    }
-
-    .time-info {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      max-width: 400px;
-      font-size: 0.9em;
-    }
-
-    @media (max-width: 768px) {
-      h1 {
-        font-size: 2em;
-      }
-
-      li {
-        font-size: 1em;
-      }
-
-      .controls button {
-        font-size: 1.2em;
-        padding: 10px;
-      }
-    }
+    body { background: #121212; color: #1db954; font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    #app { text-align: center; padding: 20px; }
+    #searchBar { margin: 20px auto; }
+    input, button { padding: 10px; font-size: 16px; }
+    ul { list-style: none; padding: 0; }
+    li { margin: 10px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>GreenWave</h1>
-    </header>
-
-    <main>
-      <div class="playlist">
-        <h2>Playlist</h2>
-        <ul id="trackList">
-          <li data-src="song1.mp3">Track 1</li>
-          <li data-src="song2.mp3">Track 2</li>
-          <li data-src="song3.mp3">Track 3</li>
-        </ul>
-      </div>
-
-      <div class="player">
-        <audio id="audioPlayer" src=""></audio>
-        <div class="controls">
-          <button id="prevBtn">⏮</button>
-          <button id="playBtn">▶️</button>
-          <button id="nextBtn">⏭</button>
-        </div>
-        <div class="track-info">
-          <span id="currentTrack">Select a track</span>
-        </div>
-        <div class="progress-container">
-          <div id="progress" class="progress"></div>
-        </div>
-        <div class="time-info">
-          <span id="currentTime">0:00</span>
-          <span id="duration">0:00</span>
-        </div>
-      </div>
-    </main>
+  <div id="app">
+    <h1>🎵 FreeStream</h1>
+    <div id="searchBar">
+      <input type="text" id="searchInput" placeholder="Search for a song...">
+      <button onclick="search()">Search</button>
+    </div>
+    <ul id="results"></ul>
+    <audio id="player" controls style="width: 100%; margin-top: 20px;"></audio>
   </div>
-
   <script>
-    const audioPlayer = document.getElementById('audioPlayer');
-    const trackList = document.getElementById('trackList');
-    const currentTrack = document.getElementById('currentTrack');
-    const playBtn = document.getElementById('playBtn');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const progress = document.getElementById('progress');
-    const currentTimeDisplay = document.getElementById('currentTime');
-    const durationDisplay = document.getElementById('duration');
+    const API_KEY = "your_youtube_api_key"; // Replace with your YouTube API key
 
-    let tracks = Array.from(trackList.children);
-    let currentIndex = -1;
+    async function search() {
+      const query = document.getElementById("searchInput").value;
+      if (!query) return alert("Please enter a search term!");
+      const results = document.getElementById("results");
+      results.innerHTML = "Searching...";
 
-    function loadTrack(index) {
-      if (index < 0 || index >= tracks.length) return;
-      currentIndex = index;
-
-      tracks.forEach((track, i) => {
-        track.classList.toggle('active', i === currentIndex);
-      });
-
-      const track = tracks[currentIndex];
-      audioPlayer.src = track.dataset.src;
-      currentTrack.textContent = track.textContent;
-      audioPlayer.play();
-      playBtn.textContent = '⏸️';
+      const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${API_KEY}`);
+      const data = await response.json();
+      results.innerHTML = data.items.map(video => `
+        <li>
+          <strong>${video.snippet.title}</strong>
+          <button onclick="play('https://www.youtube.com/watch?v=${video.id.videoId}')">Play</button>
+        </li>
+      `).join('');
     }
 
-    function updateProgress() {
-      if (audioPlayer.currentTime && audioPlayer.duration) {
-        const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        progress.style.width = `${percent}%`;
-
-        currentTimeDisplay.textContent = formatTime(audioPlayer.currentTime);
-        durationDisplay.textContent = formatTime(audioPlayer.duration);
-      }
+    function play(url) {
+      const player = document.getElementById("player");
+      player.src = url;
+      player.play();
     }
-
-    function formatTime(seconds) {
-      const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = Math.floor(seconds % 60);
-      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-
-    playBtn.addEventListener('click', () => {
-      if (audioPlayer.paused) {
-        audioPlayer.play();
-        playBtn.textContent = '⏸️';
-      } else {
-        audioPlayer.pause();
-        playBtn.textContent = '▶️';
-      }
-    });
-
-    nextBtn.addEventListener('click', () => {
-      loadTrack((currentIndex + 1) % tracks.length);
-    });
-
-    prevBtn.addEventListener('click', () => {
-      loadTrack((currentIndex - 1 + tracks.length) % tracks.length);
-    });
-
-    tracks.forEach((track, index) => {
-      track.addEventListener('click', () => loadTrack(index));
-    });
-
-    audioPlayer.addEventListener('timeupdate', updateProgress);
-    audioPlayer.addEventListener('loadedmetadata', updateProgress);
   </script>
 </body>
 </html>
