@@ -17,14 +17,15 @@
     <button onclick="searchTracks()">Search</button>
     <div id="results"></div>
 
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
     <script>
         const CLIENT_ID = '69192addbe30427f9c1ccc4af1653ecc';
-        const REDIRECT_URI = 'https://sillywilly3.github.io/SoundSphere-Music/'; // Replace with your hosting URL
+        const REDIRECT_URI = 'http://localhost:5500'; // Replace with your hosting URL
         let accessToken = '';
 
         // Authenticate user
         function authenticate() {
-            const authURL = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=streaming%20user-read-email%20user-read-private`;
+            const authURL = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=streaming%20user-read-email%20user-read-private%20user-modify-playback-state`;
             window.location = authURL;
         }
 
@@ -36,6 +37,29 @@
         }
 
         getAccessToken();
+
+        // Initialize Spotify Player
+        let player;
+        window.onSpotifyWebPlaybackSDKReady = () => {
+            player = new Spotify.Player({
+                name: 'Web Playback SDK',
+                getOAuthToken: cb => { cb(accessToken); },
+                volume: 0.5
+            });
+
+            // Ready
+            player.addListener('ready', ({ device_id }) => {
+                console.log('Ready with Device ID', device_id);
+                window.deviceId = device_id;
+            });
+
+            // Not Ready
+            player.addListener('not_ready', ({ device_id }) => {
+                console.log('Device ID has gone offline', device_id);
+            });
+
+            player.connect();
+        };
 
         // Search tracks
         async function searchTracks() {
@@ -65,7 +89,12 @@
 
         // Play track
         async function playTrack(uri) {
-            await fetch('https://api.spotify.com/v1/me/player/play', {
+            if (!window.deviceId) {
+                alert('Player not ready. Please wait and try again.');
+                return;
+            }
+
+            await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.deviceId}`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${accessToken}` },
                 body: JSON.stringify({ uris: [uri] })
